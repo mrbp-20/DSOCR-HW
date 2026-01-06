@@ -1,0 +1,4 @@
+# Сюда кладётся разметка (annotations.csv)
+# Формат CSV:
+# filename,ground_truth_text
+# scan_001.jpg,"Пример рукописного текста"

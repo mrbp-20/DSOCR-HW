@@ -1,0 +1,38 @@
+# Inference configuration for DSOCR-HW
+# Конфигурация для инференса с обученным LoRA адаптером
+
+model:
+  base_model: "deepseek-ai/DeepSeek-OCR"
+  lora_adapter: "models/lora_adapters/handwriting_v1"  # Путь к LoRA адаптеру
+  cache_dir: "models/base"
+  torch_dtype: "float16"
+  attn_implementation: "eager"  # ВАЖНО: для sm_120 (RTX 5060 Ti)
+  device_map: "auto"
+  trust_remote_code: true
+
+inference:
+  batch_size: 1              # Batch size для инференса (можно увеличить)
+  max_new_tokens: 512        # Максимальная длина генерации
+  temperature: 0.1           # Низкая температура для более детерминированных результатов
+  top_p: 0.9
+  top_k: 50
+  do_sample: false           # Детерминированная генерация (greedy decoding)
+  num_beams: 1               # Beam search (1 = greedy)
+
+preprocessing:
+  resize: [224, 224]         # Размер изображений (должен совпадать с training)
+  normalize: true
+  grayscale: false           # Конвертировать в оттенки серого
+  enhance_contrast: true     # Увеличение контраста
+  denoise: false             # Шумоподавление
+
+output:
+  format: "json"             # Формат вывода: "text", "json", "markdown"
+  save_path: "outputs"       # Путь для сохранения результатов
+  include_confidence: true   # Включать confidence score
+  include_bounding_boxes: false  # Включать bounding boxes (если поддерживается)
+
+logging:
+  log_file: "logs/inference_{timestamp}.log"
+  log_level: "INFO"          # DEBUG, INFO, WARNING, ERROR
+  verbose: true
