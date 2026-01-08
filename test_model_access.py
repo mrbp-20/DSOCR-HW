@@ -37,7 +37,7 @@ def test_model_access():
         else:
             logger.warning("⚠️  CUDA не доступен! Проверь драйвер NVIDIA.")
         
-        # Загрузка процессора
+        # Загрузка процессора и модели (Вариант 2: откат transformers)
         revision = "9f30c71f441d010e5429c532364a86705536c53a"
         logger.info("\n" + "=" * 80)
         logger.info("Загрузка AutoProcessor...")

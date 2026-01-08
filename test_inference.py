@@ -28,7 +28,7 @@ def test_inference():
         logger.info("ТЕСТ 2: Smoke test инференса на test_001.jpg")
         logger.info("=" * 80)
         
-        # Загрузка модели
+        # Загрузка модели (Вариант 2: откат transformers)
         revision = "9f30c71f441d010e5429c532364a86705536c53a"
         logger.info("Загрузка модели и процессора...")
         logger.info(f"Ревизия модели: {revision}")
