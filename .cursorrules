@@ -20,6 +20,293 @@
 
 ## Принципы разработки
 
+### 0. **ООП и модульность — наша религия**
+
+**КРИТИЧЕСКИ ВАЖНО**: Весь код пишется **модульным** с использованием **ООП**. Это позволяет переиспользовать компоненты в будущих проектах.
+
+#### Правила:
+
+1. **Каждая функциональность = класс**
+   - Загрузка данных → `DatasetLoader`
+   - Предобработка → `ImagePreprocessor`
+   - Обучение → `LoRATrainer`
+   - Оценка → `ModelEvaluator`
+
+2. **Никакого процедурного кода в скриптах**
+   - Скрипты (`scripts/*.py`) — это только CLI-обёртки
+   - Вся логика в модулях (`modules/*.py`)
+
+3. **Структура проекта**:
+```
+C:\DSOCR-HW\
+├── modules/                     # Переиспользуемые классы
+│   ├── __init__.py
+│   ├── data_loader.py           # class DatasetLoader
+│   ├── preprocessor.py          # class ImagePreprocessor
+│   ├── trainer.py               # class LoRATrainer
+│   ├── evaluator.py             # class ModelEvaluator
+│   └── inference_engine.py      # class InferenceEngine
+├── scripts/                     # CLI-интерфейсы
+│   ├── prepare_dataset.py       # использует DatasetLoader + ImagePreprocessor
+│   ├── train_lora.py            # использует LoRATrainer
+│   └── evaluate.py              # использует ModelEvaluator
+├── utils/                       # Утилиты
+│   ├── logger.py
+│   ├── config_loader.py
+│   └── metrics.py
+└── configs/
+    └── config.yaml
+```
+
+#### Пример: `modules/data_loader.py`
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Модуль для загрузки и валидации датасета.
+
+Автор: Николай
+Дата: 2026-01-08
+Проект: DSOCR-HW
+"""
+
+import pandas as pd
+from pathlib import Path
+from typing import List, Dict, Optional
+import logging
+from PIL import Image
+
+
+class DatasetLoader:
+    """Класс для загрузки и валидации датасета рукописного текста.
+    
+    Attributes:
+        raw_dir (Path): Путь к папке с изображениями
+        annotations_file (Path): Путь к CSV с разметкой
+        logger (logging.Logger): Логгер
+    
+    Example:
+        >>> loader = DatasetLoader(raw_dir="data/raw", annotations_file="data/annotated/annotations.csv")
+        >>> dataset = loader.load_dataset()
+        >>> stats = loader.get_statistics()
+    """
+    
+    def __init__(self, raw_dir: str, annotations_file: str, logger: Optional[logging.Logger] = None):
+        """Инициализация DatasetLoader.
+        
+        Args:
+            raw_dir: Путь к папке с изображениями
+            annotations_file: Путь к CSV с разметкой
+            logger: Логгер (опционально)
+        """
+        self.raw_dir = Path(raw_dir)
+        self.annotations_file = Path(annotations_file)
+        self.logger = logger or logging.getLogger(__name__)
+        
+        self._validate_paths()
+        self.df = None
+    
+    def _validate_paths(self) -> None:
+        """Проверка существования путей."""
+        if not self.raw_dir.exists():
+            raise FileNotFoundError(f"Директория не найдена: {self.raw_dir}")
+        if not self.annotations_file.exists():
+            raise FileNotFoundError(f"Файл разметки не найден: {self.annotations_file}")
+        self.logger.info(f"Пути валидны: {self.raw_dir}, {self.annotations_file}")
+    
+    def load_dataset(self) -> pd.DataFrame:
+        """Загрузка датасета из CSV.
+        
+        Returns:
+            pd.DataFrame: Датасет с колонками ['filename', 'text', 'valid']
+        
+        Raises:
+            ValueError: Если CSV невалиден
+        """
+        try:
+            self.df = pd.read_csv(self.annotations_file, encoding='utf-8')
+            self.logger.info(f"Загружено записей: {len(self.df)}")
+            
+            # Валидация
+            required_columns = ['filename', 'text']
+            if not all(col in self.df.columns for col in required_columns):
+                raise ValueError(f"CSV должен содержать колонки: {required_columns}")
+            
+            # Проверка файлов
+            self.df['valid'] = self.df['filename'].apply(lambda x: (self.raw_dir / x).exists())
+            
+            valid_count = self.df['valid'].sum()
+            self.logger.info(f"Валидных записей: {valid_count}/{len(self.df)}")
+            
+            return self.df
+        
+        except Exception as e:
+            self.logger.error(f"Ошибка загрузки датасета: {e}")
+            raise
+    
+    def get_statistics(self) -> Dict[str, int]:
+        """Статистика датасета.
+        
+        Returns:
+            Dict с ключами: total, valid, invalid, avg_text_length
+        """
+        if self.df is None:
+            raise ValueError("Сначала вызовите load_dataset()")
+        
+        stats = {
+            'total': len(self.df),
+            'valid': self.df['valid'].sum(),
+            'invalid': (~self.df['valid']).sum(),
+            'avg_text_length': int(self.df['text'].str.len().mean())
+        }
+        
+        self.logger.info(f"Статистика датасета: {stats}")
+        return stats
+    
+    def get_valid_samples(self) -> List[Dict[str, str]]:
+        """Получение валидных образцов.
+        
+        Returns:
+            List[Dict]: Список словарей с ключами 'image_path', 'text'
+        """
+        if self.df is None:
+            raise ValueError("Сначала вызовите load_dataset()")
+        
+        valid_df = self.df[self.df['valid']]
+        
+        samples = [
+            {
+                'image_path': str(self.raw_dir / row['filename']),
+                'text': row['text']
+            }
+            for _, row in valid_df.iterrows()
+        ]
+        
+        self.logger.info(f"Подготовлено образцов: {len(samples)}")
+        return samples
+```
+
+#### Пример: `scripts/prepare_dataset.py`
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Скрипт для подготовки датасета.
+
+Автор: Николай
+Дата: 2026-01-08
+Проект: DSOCR-HW
+"""
+
+import sys
+from pathlib import Path
+import argparse
+import yaml
+from datetime import datetime
+
+# Добавляем корень проекта в PYTHONPATH
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from modules.data_loader import DatasetLoader
+from modules.preprocessor import ImagePreprocessor
+from utils.logger import setup_logger
+
+
+def main(args):
+    """Основная функция скрипта.
+    
+    Args:
+        args: Аргументы командной строки
+    """
+    # Настройка логгера
+    log_file = Path("logs") / f"{Path(__file__).stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    logger = setup_logger("prepare_dataset", log_file)
+    
+    try:
+        logger.info("Запуск скрипта prepare_dataset.py")
+        
+        # Загрузка конфига
+        with open(args.config, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+        
+        # ============================================
+        # 1. Загрузка датасета (модуль DatasetLoader)
+        # ============================================
+        loader = DatasetLoader(
+            raw_dir=config['dataset']['raw_dir'],
+            annotations_file=f"{config['dataset']['annotated_dir']}/{config['dataset']['annotations_file']}",
+            logger=logger
+        )
+        
+        df = loader.load_dataset()
+        stats = loader.get_statistics()
+        samples = loader.get_valid_samples()
+        
+        # ============================================
+        # 2. Предобработка (модуль ImagePreprocessor)
+        # ============================================
+        preprocessor = ImagePreprocessor(
+            max_dimension=config['preprocessing']['max_dimension'],
+            normalize=config['preprocessing']['normalize'],
+            logger=logger
+        )
+        
+        processed_samples = preprocessor.process_batch(samples)
+        
+        # ============================================
+        # 3. Train/Val split
+        # ============================================
+        from sklearn.model_selection import train_test_split
+        
+        train_samples, val_samples = train_test_split(
+            processed_samples,
+            test_size=1 - config['split']['train_ratio'],
+            random_state=config['split']['random_seed']
+        )
+        
+        logger.info(f"Train: {len(train_samples)}, Val: {len(val_samples)}")
+        
+        # ============================================
+        # 4. Сохранение
+        # ============================================
+        preprocessor.save_split(
+            train_samples, 
+            Path(config['dataset']['processed_dir']) / 'train'
+        )
+        preprocessor.save_split(
+            val_samples, 
+            Path(config['dataset']['processed_dir']) / 'val'
+        )
+        
+        logger.info("Скрипт завершён успешно")
+        return 0
+        
+    except Exception as e:
+        logger.error(f"Ошибка: {e}", exc_info=True)
+        return 1
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Подготовка датасета")
+    parser.add_argument("--config", type=str, required=True, help="Путь к конфигу")
+    args = parser.parse_args()
+    
+    sys.exit(main(args))
+```
+
+#### Преимущества этого подхода:
+
+✅ **Переиспользование**: `DatasetLoader` можно использовать в любом проекте
+✅ **Тестирование**: Легко писать unit-тесты для классов
+✅ **Читаемость**: Скрипт = последовательность вызовов классов
+✅ **Расширяемость**: Новый функционал = новый класс
+✅ **Документация**: Docstrings в классах → автодокументация
+
+---
+
 ### 1. Всегда работаем в venv
 ```powershell
 .\venv\Scripts\Activate.ps1
@@ -89,13 +376,73 @@ model = AutoModelForVision2Seq.from_pretrained(
 
 ## Структура кода
 
-### Шаблон скрипта
+### Шаблон класса в модуле
 
 ```python
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Название скрипта: короткое описание
+Модуль [название модуля].
+
+Автор: Николай
+Дата: YYYY-MM-DD
+Проект: DSOCR-HW
+"""
+
+import logging
+from typing import Any, Dict, List, Optional
+from pathlib import Path
+
+
+class MyClass:
+    """Класс для [описание].
+    
+    Attributes:
+        attribute1: Описание атрибута 1
+        attribute2: Описание атрибута 2
+    
+    Example:
+        >>> obj = MyClass(param1="value")
+        >>> result = obj.method()
+    """
+    
+    def __init__(self, param1: str, logger: Optional[logging.Logger] = None):
+        """Инициализация класса.
+        
+        Args:
+            param1: Описание параметра
+            logger: Логгер (опционально)
+        """
+        self.param1 = param1
+        self.logger = logger or logging.getLogger(__name__)
+        self.logger.info(f"Инициализация {self.__class__.__name__}")
+    
+    def method(self) -> Any:
+        """Описание метода.
+        
+        Returns:
+            Описание возвращаемого значения
+        
+        Raises:
+            ValueError: Условие ошибки
+        """
+        try:
+            # Логика метода
+            result = None
+            self.logger.info(f"Метод выполнен успешно")
+            return result
+        except Exception as e:
+            self.logger.error(f"Ошибка в методе: {e}", exc_info=True)
+            raise
+```
+
+### Шаблон скрипта (CLI-обёртка)
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Скрипт [название]: короткое описание
 
 Автор: Николай
 Дата: YYYY-MM-DD
@@ -113,6 +460,7 @@ from datetime import datetime
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from modules.my_module import MyClass
 from utils.logger import setup_logger
 
 
@@ -140,8 +488,9 @@ def main(args):
         else:
             logger.warning("GPU недоступен, используем CPU")
         
-        # Основная логика
-        # ...
+        # Использование классов из модулей
+        obj = MyClass(param1=config['param'], logger=logger)
+        result = obj.method()
         
         logger.info("Скрипт завершён успешно")
         return 0
@@ -162,6 +511,11 @@ if __name__ == "__main__":
 ## Issues и задачи
 
 ### Issue #1: prepare_dataset.py
+**Модули**:
+- `modules/data_loader.py` → `class DatasetLoader`
+- `modules/preprocessor.py` → `class ImagePreprocessor`
+
+**Задачи**:
 - Загрузка изображений из `data/raw/`
 - Чтение разметки из `data/annotated/annotations.csv`
 - Предобработка: resize, normalize, augmentation
@@ -169,6 +523,10 @@ if __name__ == "__main__":
 - Сохранение в `data/processed/`
 
 ### Issue #2: train_lora.py
+**Модули**:
+- `modules/trainer.py` → `class LoRATrainer`
+
+**Задачи**:
 - Загрузка базовой модели DeepSeek-OCR
 - Настройка LoRA (rank=8, alpha=16)
 - Training loop с TensorBoard
@@ -176,6 +534,10 @@ if __name__ == "__main__":
 - Логирование метрик (loss, CER)
 
 ### Issue #3: evaluate.py
+**Модули**:
+- `modules/evaluator.py` → `class ModelEvaluator`
+
+**Задачи**:
 - Загрузка модели + LoRA адаптера
 - Прогон на val-датасете
 - Расчёт CER, WER
@@ -183,6 +545,10 @@ if __name__ == "__main__":
 - Сохранение отчёта
 
 ### Issue #4: inference.py
+**Модули**:
+- `modules/inference_engine.py` → `class InferenceEngine`
+
+**Задачи**:
 - CLI для распознавания одного изображения
 - Batch-обработка папки
 - Экспорт в TXT/JSON
@@ -200,20 +566,23 @@ if __name__ == "__main__":
 ## Контрольный чеклист перед Push
 
 - [ ] Код проверен на синтаксис: `python -m py_compile script.py`
-- [ ] Docstrings для всех функций
+- [ ] Docstrings для всех классов и методов
+- [ ] Type hints для всех аргументов
 - [ ] Логирование добавлено
 - [ ] Обработка ошибок (try-except)
 - [ ] Конфиги вынесены в YAML
 - [ ] Тестировано на минимальном датасете
 - [ ] VRAM не превышает 14 ГБ (оставляем 2 ГБ для системы)
 - [ ] Коммит с осмысленным сообщением
+- [ ] Код модульный (логика в `modules/`, CLI в `scripts/`)
 
 ## Приоритеты
 
-1. **Работоспособность** — код должен работать без ошибок
-2. **Логирование** — все операции логируются
-3. **Документация** — код понятен через 6 месяцев
-4. **Производительность** — оптимизация GPU, batch processing
+1. **ООП и модульность** — код должен быть переиспользуемым
+2. **Работоспособность** — код должен работать без ошибок
+3. **Логирование** — все операции логируются
+4. **Документация** — код понятен через 6 месяцев
+5. **Производительность** — оптимизация GPU, batch processing
 
 ## Связь с командой
 
@@ -224,4 +593,4 @@ if __name__ == "__main__":
 
 ---
 
-**Помни**: Мы команда, цель — сделать качественный продукт. Не стесняйся задавать вопросы через Issues! 🚀
+**Помни**: Мы команда, цель — сделать качественный продукт, который можно переиспользовать в будущих проектах. Не стесняйся задавать вопросы через Issues! 🚀
