@@ -17,16 +17,31 @@ import logging
 
 
 class ImageProcessor:
-    """Класс для предобработки изображений рукописей."""
+    """Класс для предобработки изображений рукописей.
     
-    def __init__(self, target_size: Optional[Tuple[int, int]] = None, logger: Optional[logging.Logger] = None):
+    Attributes:
+        target_size: Целевой размер изображений (width, height) - для старого API
+        max_size: Максимальный размер по большей стороне - для нового API
+        jpeg_quality: Качество JPEG при сохранении
+    """
+    
+    def __init__(self, target_size: Optional[Tuple[int, int]] = None, max_size: Optional[int] = None, 
+                 jpeg_quality: int = 95, logger: Optional[logging.Logger] = None):
         """Инициализация процессора изображений.
         
         Args:
-            target_size: Целевой размер изображений (width, height)
+            target_size: Целевой размер изображений (width, height) - для совместимости
+            max_size: Максимальный размер по большей стороне (для resize_keep_aspect_ratio)
+            jpeg_quality: Качество JPEG (1-100)
             logger: Logger для логирования
         """
         self.target_size = target_size
+        # Если max_size не указан, но есть target_size, используем максимальное значение
+        if max_size is None and target_size is not None:
+            self.max_size = max(target_size)
+        else:
+            self.max_size = max_size
+        self.jpeg_quality = jpeg_quality
         self.logger = logger or logging.getLogger(__name__)
     
     def load_image(self, image_path: Union[str, Path]) -> Image.Image:
@@ -210,6 +225,83 @@ class ImageProcessor:
             return self.normalize(image)
         
         return image
+    
+    def resize_keep_aspect_ratio(self, image: Image.Image, max_size: Optional[int] = None) -> Image.Image:
+        """Resize с сохранением aspect ratio.
+        
+        Args:
+            image: Исходное изображение
+            max_size: Максимальный размер по большей стороне (если None, используется self.max_size)
+        
+        Returns:
+            Resized изображение
+        """
+        try:
+            max_size = max_size or self.max_size
+            if max_size is None:
+                return image
+            
+            width, height = image.size
+            
+            # Если изображение меньше max_size, не меняем
+            if max(width, height) <= max_size:
+                return image
+            
+            # Вычисляем новый размер
+            if width > height:
+                new_width = max_size
+                new_height = int(height * (max_size / width))
+            else:
+                new_height = max_size
+                new_width = int(width * (max_size / height))
+            
+            resized = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            self.logger.debug(f"Resize с сохранением aspect ratio: {width}x{height} → {new_width}x{new_height}")
+            return resized
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка resize_keep_aspect_ratio: {e}", exc_info=True)
+            raise
+    
+    def save(self, image: Image.Image, output_path: Path) -> None:
+        """Сохранение изображения.
+        
+        Args:
+            image: PIL Image
+            output_path: Путь для сохранения
+        """
+        try:
+            output_path = Path(output_path)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            image.save(output_path, 'JPEG', quality=self.jpeg_quality)
+            self.logger.debug(f"Изображение сохранено: {output_path}")
+        except Exception as e:
+            self.logger.error(f"Ошибка сохранения изображения {output_path}: {e}", exc_info=True)
+            raise
+    
+    def process(self, image: Image.Image) -> Image.Image:
+        """Полная предобработка изображения (для prepare_dataset).
+        
+        Args:
+            image: Исходное изображение
+        
+        Returns:
+            Обработанное изображение
+        """
+        try:
+            # 1. Конвертация в RGB (если grayscale)
+            if image.mode != 'RGB':
+                image = image.convert('RGB')
+            
+            # 2. Resize с сохранением aspect ratio
+            if self.max_size is not None:
+                image = self.resize_keep_aspect_ratio(image)
+            
+            return image
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка process: {e}", exc_info=True)
+            raise
 
 
 if __name__ == "__main__":
