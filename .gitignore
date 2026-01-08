@@ -41,19 +41,19 @@ env/
 .ipynb_checkpoints
 *.ipynb
 
-# Logs
-logs/*.log
-logs/*.txt
-*.log
+# Logs (разрешаем коммитить логи для отслеживания работы)
+# logs/*.log
+# logs/*.txt
+# *.log
 
-# Data files (не коммитим большие файлы)
+# Data files (коммитим структуру и metadata, но не большие изображения)
 data/raw/*.jpg
 data/raw/*.jpeg
 data/raw/*.png
 data/raw/*.pdf
-data/processed/**/*.jpg
-data/processed/**/*.jpeg
-data/processed/**/*.png
+# data/processed/**/*.jpg - разрешаем коммитить обработанные изображения для тестирования
+# data/processed/**/*.jpeg
+# data/processed/**/*.png
 
 # Models (не коммитим веса базовой модели)
 models/base/**/*
