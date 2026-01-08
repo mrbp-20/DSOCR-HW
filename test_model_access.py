@@ -14,7 +14,7 @@ P.S. Николай, если этот скрипт упадёт — не рас
 Просто скопируй traceback и отправь Семёну. 😎
 """
 import torch
-from transformers import AutoProcessor, AutoModelForVision2Seq
+from transformers import AutoProcessor, AutoModel
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -51,14 +51,14 @@ def test_model_access():
         
         # Загрузка модели
         logger.info("\n" + "=" * 80)
-        logger.info("Загрузка AutoModelForVision2Seq...")
+        logger.info("Загрузка AutoModel...")
         logger.info("Параметры:")
         logger.info(f"  - revision: {revision}")
         logger.info("  - torch_dtype: float16")
         logger.info("  - attn_implementation: eager (для sm_120)")
         logger.info("  - device_map: auto")
         
-        model = AutoModelForVision2Seq.from_pretrained(
+        model = AutoModel.from_pretrained(
             "deepseek-ai/DeepSeek-OCR",
             revision=revision,
             torch_dtype=torch.float16,

@@ -14,7 +14,7 @@ P.S. Николай, если модель вернёт что-то типа "�
 вернула, а не упала с segfault. 😄
 """
 import torch
-from transformers import AutoProcessor, AutoModelForVision2Seq
+from transformers import AutoProcessor, AutoModel
 from PIL import Image
 import logging
 
@@ -37,7 +37,7 @@ def test_inference():
             revision=revision,
             trust_remote_code=True
         )
-        model = AutoModelForVision2Seq.from_pretrained(
+        model = AutoModel.from_pretrained(
             "deepseek-ai/DeepSeek-OCR",
             revision=revision,
             torch_dtype=torch.float16,
