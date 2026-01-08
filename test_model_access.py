@@ -38,10 +38,13 @@ def test_model_access():
             logger.warning("⚠️  CUDA не доступен! Проверь драйвер NVIDIA.")
         
         # Загрузка процессора
+        revision = "9f30c71f441d010e5429c532364a86705536c53a"
         logger.info("\n" + "=" * 80)
         logger.info("Загрузка AutoProcessor...")
+        logger.info(f"Ревизия модели: {revision}")
         processor = AutoProcessor.from_pretrained(
             "deepseek-ai/DeepSeek-OCR",
+            revision=revision,
             trust_remote_code=True
         )
         logger.info("✅ Процессор загружен успешно")
@@ -50,12 +53,14 @@ def test_model_access():
         logger.info("\n" + "=" * 80)
         logger.info("Загрузка AutoModelForVision2Seq...")
         logger.info("Параметры:")
+        logger.info(f"  - revision: {revision}")
         logger.info("  - torch_dtype: float16")
         logger.info("  - attn_implementation: eager (для sm_120)")
         logger.info("  - device_map: auto")
         
         model = AutoModelForVision2Seq.from_pretrained(
             "deepseek-ai/DeepSeek-OCR",
+            revision=revision,
             torch_dtype=torch.float16,
             attn_implementation="eager",  # КРИТИЧНО для RTX 5060 Ti (sm_120)
             device_map="auto",
