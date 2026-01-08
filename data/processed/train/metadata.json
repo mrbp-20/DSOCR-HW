@@ -1,0 +1,11 @@
+[
+  {
+    "image_id": "00001",
+    "image_path": "images/00001.jpg",
+    "text": "Это лучшая команда, что я встречал.",
+    "original_filename": "test_002.jpg",
+    "width": 1024,
+    "height": 111,
+    "split": "train"
+  }
+]
