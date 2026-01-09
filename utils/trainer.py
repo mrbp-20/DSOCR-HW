@@ -17,7 +17,7 @@ from PIL import Image
 import numpy as np
 
 from transformers import (
-    AutoModelForVision2Seq,
+    AutoModel,
     AutoProcessor,
     TrainingArguments,
     Trainer,
@@ -78,25 +78,30 @@ class LoRATrainer:
             model_config = self.config['model']
             base_model = model_config['base_model']
             
+            # Revision для DeepSeek-OCR (совместимая версия)
+            revision = model_config.get('revision', "9f30c71f441d010e5429c532364a86705536c53a")
+            
             # Загрузка процессора
             self.processor = AutoProcessor.from_pretrained(
                 base_model,
+                revision=revision,
                 trust_remote_code=model_config.get('trust_remote_code', True)
             )
-            self.logger.info(f"Процессор загружен: {base_model}")
+            self.logger.info(f"Процессор загружен: {base_model} (revision: {revision})")
             
             # Загрузка модели
             torch_dtype = getattr(torch, model_config.get('torch_dtype', 'float16'))
             
-            self.model = AutoModelForVision2Seq.from_pretrained(
+            self.model = AutoModel.from_pretrained(
                 base_model,
+                revision=revision,
                 torch_dtype=torch_dtype,
                 attn_implementation=model_config.get('attn_implementation', 'eager'),
                 device_map=model_config.get('device_map', 'auto'),
                 trust_remote_code=model_config.get('trust_remote_code', True),
                 cache_dir=model_config.get('cache_dir')
             )
-            self.logger.info(f"Модель загружена: {base_model}")
+            self.logger.info(f"Модель загружена: {base_model} (revision: {revision})")
             
         except Exception as e:
             self.logger.error(f"Ошибка загрузки модели: {e}", exc_info=True)
