@@ -1,0 +1,24 @@
+2026-01-09 22:29:31 - prepare_dataset - INFO - Пути валидны: data\annotated\annotations.csv, data\raw
+2026-01-09 22:29:31 - prepare_dataset - INFO - ================================================================================
+2026-01-09 22:29:31 - prepare_dataset - INFO - Начало подготовки датасета
+2026-01-09 22:29:31 - prepare_dataset - INFO - ================================================================================
+2026-01-09 22:29:31 - prepare_dataset - INFO - Шаг 1: Загрузка датасета...
+2026-01-09 22:29:31 - prepare_dataset - INFO - Загружено записей из CSV: 4
+2026-01-09 22:29:31 - prepare_dataset - INFO - Записей после удаления пустых: 4
+2026-01-09 22:29:31 - prepare_dataset - INFO - Загружено образцов: 4/4
+2026-01-09 22:29:31 - prepare_dataset - INFO - Загружено образцов: 4
+2026-01-09 22:29:31 - prepare_dataset - INFO - Шаг 2: Валидация датасета...
+2026-01-09 22:29:31 - prepare_dataset - INFO - Валидация завершена: 4 валидных, 0 невалидных
+2026-01-09 22:29:31 - prepare_dataset - INFO - Валидных образцов: 4
+2026-01-09 22:29:31 - prepare_dataset - INFO - Шаг 3: Разделение на train/val...
+2026-01-09 22:29:31 - prepare_dataset - INFO - Split: Train=3, Val=1
+2026-01-09 22:29:31 - prepare_dataset - INFO - Train: 3, Val: 1
+2026-01-09 22:29:31 - prepare_dataset - INFO - Шаг 4: Обработка train...
+2026-01-09 22:29:31 - prepare_dataset - INFO - Metadata сохранена: data\processed\train\metadata.json (3 записей)
+2026-01-09 22:29:31 - prepare_dataset - INFO - Сохранено в data\processed\train: 3 образцов
+2026-01-09 22:29:31 - prepare_dataset - INFO - Шаг 5: Обработка val...
+2026-01-09 22:29:31 - prepare_dataset - INFO - Metadata сохранена: data\processed\val\metadata.json (1 записей)
+2026-01-09 22:29:31 - prepare_dataset - INFO - Сохранено в data\processed\val: 1 образцов
+2026-01-09 22:29:31 - prepare_dataset - INFO - ================================================================================
+2026-01-09 22:29:31 - prepare_dataset - INFO - Подготовка датасета завершена успешно!
+2026-01-09 22:29:31 - prepare_dataset - INFO - ================================================================================
