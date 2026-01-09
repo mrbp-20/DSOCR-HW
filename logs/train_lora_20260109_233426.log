@@ -1,0 +1,29 @@
+2026-01-09 23:34:26 - train_lora - INFO - ================================================================================
+2026-01-09 23:34:26 - train_lora - INFO - Запуск обучения LoRA
+2026-01-09 23:34:26 - train_lora - INFO - ================================================================================
+2026-01-09 23:34:26 - train_lora - INFO - Конфигурация загружена из configs\training_config.yaml
+2026-01-09 23:34:26 - train_lora - INFO - Шаг 1: Загрузка модели и процессора...
+2026-01-09 23:34:26 - train_lora - INFO - Загрузка модели и процессора...
+2026-01-09 23:34:28 - train_lora - INFO - Процессор загружен: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 00:12:12 - train_lora - INFO - Модель загружена: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 00:12:12 - train_lora - INFO - Шаг 2: Настройка LoRA...
+2026-01-10 00:12:12 - train_lora - INFO - Настройка LoRA...
+2026-01-10 00:12:18 - train_lora - INFO - LoRA настроен успешно
+2026-01-10 00:12:18 - train_lora - INFO - Шаг 3: Подготовка датасетов...
+2026-01-10 00:12:18 - train_lora - INFO - Подготовка датасетов...
+2026-01-10 00:12:18 - train_lora - INFO - Загружено train: 3, val: 1 образцов
+2026-01-10 00:12:18 - train_lora - INFO - Датасеты подготовлены
+2026-01-10 00:12:18 - train_lora - INFO - Шаг 4: Создание Trainer...
+2026-01-10 00:12:18 - train_lora - INFO - Создание Trainer...
+2026-01-10 00:12:18 - train_lora - ERROR - Ошибка создания Trainer: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\utils\trainer.py", line 226, in create_trainer
+    training_args = TrainingArguments(
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'
+2026-01-10 00:12:18 - train_lora - ERROR - Ошибка: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\scripts\train_lora.py", line 56, in main
+    trainer.create_trainer()
+  File "C:\DSOCR-HW\utils\trainer.py", line 226, in create_trainer
+    training_args = TrainingArguments(
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'
