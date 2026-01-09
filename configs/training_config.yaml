@@ -25,17 +25,17 @@ lora:
 
 training:
   output_dir: "models/lora_adapters/handwriting_v1"
-  num_train_epochs: 50
-  per_device_train_batch_size: 4  # Уменьши до 2, если VRAM не хватает
+  num_train_epochs: 5  # Proof-of-concept: проверяем, что всё работает
+  per_device_train_batch_size: 1  # У нас всего 3 train образца
   per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 4  # Эффективный batch_size = 4*4 = 16
+  gradient_accumulation_steps: 2  # Эффективный batch_size = 1*2 = 2
   learning_rate: 3.0e-4
   weight_decay: 0.01
   warmup_steps: 100
   logging_steps: 10
-  save_steps: 500
+  save_steps: 3  # Сохраняем каждую эпоху (3 шага = 1 эпоха)
   save_total_limit: 3        # Храним только 3 последних чекпоинта
-  eval_steps: 500
+  eval_steps: 3  # Оценка каждую эпоху
   evaluation_strategy: "steps"
   save_strategy: "steps"
   load_best_model_at_end: true
