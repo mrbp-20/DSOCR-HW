@@ -42,7 +42,7 @@ training:
   metric_for_best_model: "eval_loss"
   greater_is_better: false
   fp16: true                 # Mixed precision для экономии VRAM
-  dataloader_num_workers: 2  # Параллельная загрузка данных
+  dataloader_num_workers: 0  # Отключено для Windows + custom code моделей (multiprocessing проблемы)
   remove_unused_columns: false
   report_to: "tensorboard"   # Логирование в TensorBoard
   logging_dir: "models/lora_adapters/handwriting_v1/runs"

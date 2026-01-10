@@ -1,0 +1,44 @@
+2026-01-10 16:04:58 - train_lora - INFO - ================================================================================
+2026-01-10 16:04:58 - train_lora - INFO - Запуск обучения LoRA
+2026-01-10 16:04:58 - train_lora - INFO - ================================================================================
+2026-01-10 16:04:58 - train_lora - INFO - Конфигурация загружена из configs\training_config.yaml
+2026-01-10 16:04:58 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:04:58 - train_lora - INFO - Шаг 1/5: Загрузка модели и процессора...
+2026-01-10 16:04:58 - train_lora - INFO - ================================================================================
+2026-01-10 16:04:58 - train_lora - INFO - Загрузка модели и процессора...
+2026-01-10 16:05:00 - train_lora - INFO - Процессор загружен: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 16:05:13 - train_lora - INFO - Модель загружена: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 16:05:13 - train_lora - INFO - OK Шаг 1 завершён
+2026-01-10 16:05:13 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:05:13 - train_lora - INFO - Шаг 2/5: Настройка LoRA...
+2026-01-10 16:05:13 - train_lora - INFO - ================================================================================
+2026-01-10 16:05:13 - train_lora - INFO - Настройка LoRA...
+2026-01-10 16:05:19 - train_lora - INFO - LoRA настроен успешно
+2026-01-10 16:05:19 - train_lora - INFO - OK Шаг 2 завершён
+2026-01-10 16:05:19 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:05:19 - train_lora - INFO - Шаг 3/5: Подготовка датасетов...
+2026-01-10 16:05:19 - train_lora - INFO - ================================================================================
+2026-01-10 16:05:19 - train_lora - INFO - Подготовка датасетов...
+2026-01-10 16:05:19 - train_lora - INFO - Загружено train: 3, val: 1 образцов
+2026-01-10 16:05:19 - train_lora - INFO - Датасеты подготовлены
+2026-01-10 16:05:19 - train_lora - INFO - OK Шаг 3 завершён
+2026-01-10 16:05:19 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:05:19 - train_lora - INFO - Шаг 4/5: Создание Trainer...
+2026-01-10 16:05:19 - train_lora - INFO - ================================================================================
+2026-01-10 16:05:19 - train_lora - INFO - Создание Trainer...
+2026-01-10 16:05:19 - train_lora - ERROR - Ошибка создания Trainer: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\utils\trainer.py", line 245, in create_trainer
+    training_args = TrainingArguments(
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'
+2026-01-10 16:05:19 - train_lora - ERROR - Ошибка: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\scripts\train_lora.py", line 70, in main
+    trainer.create_trainer()
+  File "C:\DSOCR-HW\utils\trainer.py", line 245, in create_trainer
+    training_args = TrainingArguments(
+TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'optimizer'

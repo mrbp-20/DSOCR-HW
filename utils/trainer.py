@@ -186,6 +186,34 @@ class LoRATrainer:
             self.logger.error(f"Ошибка обработки элемента {item.get('image_id', 'unknown')}: {e}", exc_info=True)
             raise
     
+    def _data_collator(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Data collator для обработки батчей данных.
+        
+        Args:
+            examples: Список примеров из датасета
+        
+        Returns:
+            Словарь с обработанными данными (pixel_values, input_ids, attention_mask, labels)
+        """
+        try:
+            # Загрузка изображений
+            images = [Image.open(ex['image_path']).convert('RGB') for ex in examples]
+            texts = [ex['text'] for ex in examples]
+            
+            # Обработка через processor
+            # Processor возвращает pixel_values, input_ids, attention_mask
+            # Для обучения нужны labels (input_ids для targets)
+            inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True)
+            
+            # Labels = input_ids для sequence-to-sequence
+            if 'input_ids' in inputs:
+                inputs['labels'] = inputs['input_ids'].clone()
+            
+            return inputs
+        except Exception as e:
+            self.logger.error(f"Ошибка в data_collator: {e}", exc_info=True)
+            raise
+    
     def prepare_datasets(self) -> None:
         """Подготовка датасетов для обучения с индикатором прогресса."""
         try:
@@ -266,28 +294,10 @@ class LoRATrainer:
                 report_to=training_config.get('report_to', []),
                 logging_dir=training_config.get('logging_dir'),
                 seed=training_config.get('seed', 42),
-                optimizer=optimization_config.get('optimizer', 'adamw_torch'),
                 lr_scheduler_type=optimization_config.get('lr_scheduler_type', 'linear'),
                 max_grad_norm=optimization_config.get('max_grad_norm', 1.0),
                 disable_tqdm=False  # Включить progress bars во время обучения
             )
-            
-            # Data collator
-            def data_collator(examples):
-                # Загрузка изображений
-                images = [Image.open(ex['image_path']).convert('RGB') for ex in examples]
-                texts = [ex['text'] for ex in examples]
-                
-                # Обработка через processor
-                # Processor возвращает pixel_values, input_ids, attention_mask
-                # Для обучения нужны labels (input_ids для targets)
-                inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True)
-                
-                # Labels = input_ids для sequence-to-sequence
-                if 'input_ids' in inputs:
-                    inputs['labels'] = inputs['input_ids'].clone()
-                
-                return inputs
             
             # Callbacks
             callbacks = []
@@ -304,7 +314,7 @@ class LoRATrainer:
                 args=training_args,
                 train_dataset=self.train_dataset,
                 eval_dataset=self.eval_dataset,
-                data_collator=data_collator,
+                data_collator=self._data_collator,
                 callbacks=callbacks
             )
             

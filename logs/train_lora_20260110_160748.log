@@ -1,0 +1,104 @@
+2026-01-10 16:07:48 - train_lora - INFO - ================================================================================
+2026-01-10 16:07:48 - train_lora - INFO - Запуск обучения LoRA
+2026-01-10 16:07:48 - train_lora - INFO - ================================================================================
+2026-01-10 16:07:48 - train_lora - INFO - Конфигурация загружена из configs\training_config.yaml
+2026-01-10 16:07:48 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:07:48 - train_lora - INFO - Шаг 1/5: Загрузка модели и процессора...
+2026-01-10 16:07:48 - train_lora - INFO - ================================================================================
+2026-01-10 16:07:48 - train_lora - INFO - Загрузка модели и процессора...
+2026-01-10 16:07:49 - train_lora - INFO - Процессор загружен: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 16:07:59 - train_lora - INFO - Модель загружена: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 16:07:59 - train_lora - INFO - OK Шаг 1 завершён
+2026-01-10 16:07:59 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:07:59 - train_lora - INFO - Шаг 2/5: Настройка LoRA...
+2026-01-10 16:07:59 - train_lora - INFO - ================================================================================
+2026-01-10 16:07:59 - train_lora - INFO - Настройка LoRA...
+2026-01-10 16:08:05 - train_lora - INFO - LoRA настроен успешно
+2026-01-10 16:08:05 - train_lora - INFO - OK Шаг 2 завершён
+2026-01-10 16:08:05 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:08:05 - train_lora - INFO - Шаг 3/5: Подготовка датасетов...
+2026-01-10 16:08:05 - train_lora - INFO - ================================================================================
+2026-01-10 16:08:05 - train_lora - INFO - Подготовка датасетов...
+2026-01-10 16:08:05 - train_lora - INFO - Загружено train: 3, val: 1 образцов
+2026-01-10 16:08:05 - train_lora - INFO - Датасеты подготовлены
+2026-01-10 16:08:05 - train_lora - INFO - OK Шаг 3 завершён
+2026-01-10 16:08:05 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:08:05 - train_lora - INFO - Шаг 4/5: Создание Trainer...
+2026-01-10 16:08:05 - train_lora - INFO - ================================================================================
+2026-01-10 16:08:05 - train_lora - INFO - Создание Trainer...
+2026-01-10 16:08:05 - train_lora - INFO - Trainer создан
+2026-01-10 16:08:05 - train_lora - INFO - OK Шаг 4 завершён
+2026-01-10 16:08:05 - train_lora - INFO - 
+================================================================================
+2026-01-10 16:08:05 - train_lora - INFO - Шаг 5/5: ЗАПУСК ОБУЧЕНИЯ!
+2026-01-10 16:08:05 - train_lora - INFO - ================================================================================
+2026-01-10 16:08:05 - train_lora - INFO - ================================================================================
+2026-01-10 16:08:05 - train_lora - INFO - Начало обучения
+2026-01-10 16:08:05 - train_lora - INFO - ================================================================================
+2026-01-10 16:08:07 - train_lora - ERROR - Ошибка в data_collator: PreTrainedTokenizerFast._batch_encode_plus() got an unexpected keyword argument 'images'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\utils\trainer.py", line 206, in _data_collator
+    inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3024, in __call__
+    encodings = self._call_one(text=text, text_pair=text_pair, **all_kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3112, in _call_one
+    return self.batch_encode_plus(
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3314, in batch_encode_plus
+    return self._batch_encode_plus(
+TypeError: PreTrainedTokenizerFast._batch_encode_plus() got an unexpected keyword argument 'images'
+2026-01-10 16:08:07 - train_lora - ERROR - Ошибка обучения: PreTrainedTokenizerFast._batch_encode_plus() got an unexpected keyword argument 'images'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\utils\trainer.py", line 338, in train
+    self.trainer.train()
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2052, in train
+    return inner_training_loop(
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2345, in _inner_training_loop
+    for step, inputs in enumerate(epoch_iterator):
+  File "C:\DSOCR-HW\venv\lib\site-packages\accelerate\data_loader.py", line 567, in __iter__
+    current_batch = next(dataloader_iter)
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\utils\data\dataloader.py", line 701, in __next__
+    data = self._next_data()
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\utils\data\dataloader.py", line 757, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\utils\data\_utils\fetch.py", line 55, in fetch
+    return self.collate_fn(data)
+  File "C:\DSOCR-HW\utils\trainer.py", line 206, in _data_collator
+    inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3024, in __call__
+    encodings = self._call_one(text=text, text_pair=text_pair, **all_kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3112, in _call_one
+    return self.batch_encode_plus(
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3314, in batch_encode_plus
+    return self._batch_encode_plus(
+TypeError: PreTrainedTokenizerFast._batch_encode_plus() got an unexpected keyword argument 'images'
+2026-01-10 16:08:07 - train_lora - ERROR - Ошибка: PreTrainedTokenizerFast._batch_encode_plus() got an unexpected keyword argument 'images'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\scripts\train_lora.py", line 77, in main
+    trainer.train()
+  File "C:\DSOCR-HW\utils\trainer.py", line 338, in train
+    self.trainer.train()
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2052, in train
+    return inner_training_loop(
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2345, in _inner_training_loop
+    for step, inputs in enumerate(epoch_iterator):
+  File "C:\DSOCR-HW\venv\lib\site-packages\accelerate\data_loader.py", line 567, in __iter__
+    current_batch = next(dataloader_iter)
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\utils\data\dataloader.py", line 701, in __next__
+    data = self._next_data()
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\utils\data\dataloader.py", line 757, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\utils\data\_utils\fetch.py", line 55, in fetch
+    return self.collate_fn(data)
+  File "C:\DSOCR-HW\utils\trainer.py", line 206, in _data_collator
+    inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3024, in __call__
+    encodings = self._call_one(text=text, text_pair=text_pair, **all_kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3112, in _call_one
+    return self.batch_encode_plus(
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\tokenization_utils_base.py", line 3314, in batch_encode_plus
+    return self._batch_encode_plus(
+TypeError: PreTrainedTokenizerFast._batch_encode_plus() got an unexpected keyword argument 'images'
