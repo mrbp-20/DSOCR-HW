@@ -372,7 +372,7 @@ class LoRATrainer:
         # images_spatial_crop и images_seq_mask - опциональные, но модель требует их присутствия
         batch = {
             'images': images_list,  # Список tuple: [(crop, ori), (crop, ori), ...]
-            'images_spatial_crop': [None] * len(images_list),  # Пустой список для совместимости
+            'images_spatial_crop': [[1, 1]] * len(images_list),  # [width_crop_num, height_crop_num] для каждого изображения
             'images_seq_mask': None,  # Опциональный параметр
             'input_ids': text_inputs['input_ids'],  # [batch_size, seq_len]
             'attention_mask': text_inputs['attention_mask'],  # [batch_size, seq_len]
