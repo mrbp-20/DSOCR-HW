@@ -327,12 +327,14 @@ class LoRATrainer:
             
             # Применяем transforms к каждому изображению
             # КРИТИЧНО: DeepSeek-OCR ожидает список списков: [[base_image, crop1, crop2], ...]
-            # Если crop1/crop2 не используются, передаём None
+            # Если crop1/crop2 не используются, передаём пустые тензоры (модель проверяет images[0][1])
             images_list = []
             for img in images:
                 image_tensor = transform(img)
                 # Создаём список [base_image, crop1, crop2] для каждого изображения
-                image_item = [image_tensor, None, None]
+                # Используем пустые тензоры вместо None, т.к. модель обращается к images[0][1]
+                empty_tensor = torch.zeros_like(image_tensor)
+                image_item = [image_tensor, empty_tensor, empty_tensor]
                 images_list.append(image_item)
             
             self.logger.debug(f"Обработано {len(images)} изображений, images_list length: {len(images_list)}")
