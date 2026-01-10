@@ -221,6 +221,9 @@ class LoRATrainer:
             
             lora_config_dict = self.config['lora']
             
+            # Импорт wrapper для фильтрации decoder_input_ids
+            from utils.model_wrapper import DeepSeekOCRWrapper
+            
             # Создание конфигурации LoRA
             lora_config = LoraConfig(
                 r=lora_config_dict['r'],
@@ -231,7 +234,12 @@ class LoRATrainer:
                 task_type=TaskType[lora_config_dict.get('task_type', 'SEQ_2_SEQ_LM')]
             )
             
-            # Применение LoRA к модели
+            # КРИТИЧНО: Оборачиваем модель ПЕРЕД применением LoRA
+            # Это фильтрует decoder_input_ids, который PEFT автоматически добавляет
+            self.logger.info("Оборачиваем модель для совместимости с PEFT...")
+            self.model = DeepSeekOCRWrapper(self.model)
+            
+            # Применение LoRA к wrapper (не к базовой модели)
             self.model = get_peft_model(self.model, lora_config)
             self.model.print_trainable_parameters()
             
