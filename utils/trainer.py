@@ -373,7 +373,7 @@ class LoRATrainer:
         batch = {
             'images': images_list,  # Список tuple: [(crop, ori), (crop, ori), ...]
             'images_spatial_crop': [[1, 1]] * len(images_list),  # [width_crop_num, height_crop_num] для каждого изображения
-            'images_seq_mask': None,  # Опциональный параметр
+            'images_seq_mask': torch.ones(len(images_list), 1),  # Маска последовательности [batch_size, 1]
             'input_ids': text_inputs['input_ids'],  # [batch_size, seq_len]
             'attention_mask': text_inputs['attention_mask'],  # [batch_size, seq_len]
         }
