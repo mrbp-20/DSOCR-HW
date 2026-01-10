@@ -76,18 +76,12 @@ class DSModelTrainer(Trainer):
             CausalLM не поддерживает параметр decoder_input_ids.
         
         Решение:
-            Переопределяем compute_loss, чтобы передать в модель правильные параметры:
-            - pixel_values (от vision encoder)
-            - input_ids (текстовые токены для decoder)
-            - labels (для loss computation)
-        
-        Args:
-            model: Модель DeepSeek-OCR с LoRA
-            inputs: Batch из data_collator с ключами:
-                    - pixel_values: [batch_size, 3, H, W]
-                    - input_ids: [batch_size, seq_len]
-                    - attention_mask: [batch_size, seq_len]
-                    - labels: [batch_size, seq_len]
+        # 3. Вызываем forward pass модели с правильными параметрами
+        # DeepSeek-OCR принимает:
+        # - images: изображения для vision encoder (ВАЖНО: 'images', не 'pixel_values'!)
+        # - input_ids: текстовые токены (как в GPT)
+        # - attention_mask: маска для input_ids
+        # - labels: целевые токены для loss
             return_outputs: Вернуть outputs вместе с loss
         
         Returns:
@@ -99,9 +93,10 @@ class DSModelTrainer(Trainer):
         
         # 2. Создаём новый словарь ТОЛЬКО с нужными параметрами
         # Это гарантирует, что decoder_input_ids не попадёт в модель
+        # ВАЖНО: DeepSeek-OCR использует 'images', не 'pixel_values'!
         model_inputs = {}
-        if "pixel_values" in inputs:
-            model_inputs["pixel_values"] = inputs["pixel_values"]
+        if "images" in inputs:
+            model_inputs["images"] = inputs["images"]
         if "input_ids" in inputs:
             model_inputs["input_ids"] = inputs["input_ids"]
         if "attention_mask" in inputs:
@@ -304,7 +299,7 @@ class LoRATrainer:
         
         Returns:
             Батч для обучения с ключами:
-            - pixel_values: тензор изображений [batch_size, 3, H, W]
+            - images: тензор изображений [batch_size, 3, H, W] (ВАЖНО: 'images', не 'pixel_values'!)
             - input_ids: токенизированный текст
             - attention_mask: маска внимания
             - labels: метки для loss (копия input_ids)
@@ -360,7 +355,7 @@ class LoRATrainer:
         
         # 4. Объединяем все inputs в один батч
         batch = {
-            'pixel_values': pixel_values,  # [batch_size, 3, H, W]
+            'images': pixel_values,  # [batch_size, 3, H, W] - DeepSeek-OCR использует 'images', не 'pixel_values'!
             'input_ids': text_inputs['input_ids'],  # [batch_size, seq_len]
             'attention_mask': text_inputs['attention_mask'],  # [batch_size, seq_len]
         }

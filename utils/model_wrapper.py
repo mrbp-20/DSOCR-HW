@@ -85,8 +85,9 @@ class DeepSeekOCRWrapper(nn.Module):
         """
         # Передаём в базовую модель ТОЛЬКО то, что она понимает
         # decoder_input_ids НЕ передаём!
+        # ВАЖНО: DeepSeek-OCR использует 'images', не 'pixel_values'!
         return self.model(
-            pixel_values=pixel_values,
+            images=pixel_values,
             input_ids=input_ids,
             attention_mask=attention_mask,
             labels=labels
