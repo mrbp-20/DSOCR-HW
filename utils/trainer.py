@@ -299,7 +299,7 @@ class LoRATrainer:
         
         Returns:
             Батч для обучения с ключами:
-            - images: тензор изображений [batch_size, 3, H, W] (ВАЖНО: 'images', не 'pixel_values'!)
+            - images: список списков [[tensor, None, None], ...] (ВАЖНО: DeepSeek-OCR ожидает [base_image, crop1, crop2]!)
             - input_ids: токенизированный текст
             - attention_mask: маска внимания
             - labels: метки для loss (копия input_ids)
@@ -325,10 +325,17 @@ class LoRATrainer:
                 )
             ])
             
-            # Применяем transforms к каждому изображению и собираем в batch
-            pixel_values = torch.stack([transform(img) for img in images])
+            # Применяем transforms к каждому изображению
+            # КРИТИЧНО: DeepSeek-OCR ожидает список списков: [[base_image, crop1, crop2], ...]
+            # Если crop1/crop2 не используются, передаём None
+            images_list = []
+            for img in images:
+                image_tensor = transform(img)
+                # Создаём список [base_image, crop1, crop2] для каждого изображения
+                image_item = [image_tensor, None, None]
+                images_list.append(image_item)
             
-            self.logger.debug(f"Обработано {len(images)} изображений, pixel_values shape: {pixel_values.shape}")
+            self.logger.debug(f"Обработано {len(images)} изображений, images_list length: {len(images_list)}")
             
         except Exception as e:
             self.logger.error(f"Ошибка обработки изображений: {e}", exc_info=True)
@@ -354,8 +361,9 @@ class LoRATrainer:
             raise
         
         # 4. Объединяем все inputs в один батч
+        # КРИТИЧНО: images должен быть списком списков: [[tensor, None, None], ...]
         batch = {
-            'images': pixel_values,  # [batch_size, 3, H, W] - DeepSeek-OCR использует 'images', не 'pixel_values'!
+            'images': images_list,  # Список списков: [[base_image, crop1, crop2], ...]
             'input_ids': text_inputs['input_ids'],  # [batch_size, seq_len]
             'attention_mask': text_inputs['attention_mask'],  # [batch_size, seq_len]
         }
