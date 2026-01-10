@@ -42,24 +42,42 @@ def main(args):
         # Создание тренера
         trainer = LoRATrainer(config_path=Path(args.config), logger=logger)
         
-        # Подготовка
-        logger.info("Шаг 1: Загрузка модели и процессора...")
-        trainer.load_model_and_processor()
-        
-        logger.info("Шаг 2: Настройка LoRA...")
-        trainer.setup_lora()
-        
-        logger.info("Шаг 3: Подготовка датасетов...")
-        trainer.prepare_datasets()
-        
-        logger.info("Шаг 4: Создание Trainer...")
-        trainer.create_trainer()
-        
-        # Обучение
-        logger.info("Шаг 5: Запуск обучения...")
-        trainer.train()
-        
+        # Шаг 1: Загрузка модели
+        logger.info("\n" + "=" * 80)
+        logger.info("Шаг 1/5: Загрузка модели и процессора...")
         logger.info("=" * 80)
+        trainer.load_model_and_processor()
+        logger.info("OK Шаг 1 завершён")
+        
+        # Шаг 2: LoRA
+        logger.info("\n" + "=" * 80)
+        logger.info("Шаг 2/5: Настройка LoRA...")
+        logger.info("=" * 80)
+        trainer.setup_lora()
+        logger.info("OK Шаг 2 завершён")
+        
+        # Шаг 3: Датасеты
+        logger.info("\n" + "=" * 80)
+        logger.info("Шаг 3/5: Подготовка датасетов...")
+        logger.info("=" * 80)
+        trainer.prepare_datasets()
+        logger.info("OK Шаг 3 завершён")
+        
+        # Шаг 4: Trainer
+        logger.info("\n" + "=" * 80)
+        logger.info("Шаг 4/5: Создание Trainer...")
+        logger.info("=" * 80)
+        trainer.create_trainer()
+        logger.info("OK Шаг 4 завершён")
+        
+        # Шаг 5: Обучение
+        logger.info("\n" + "=" * 80)
+        logger.info("Шаг 5/5: ЗАПУСК ОБУЧЕНИЯ!")
+        logger.info("=" * 80)
+        trainer.train()
+        logger.info("OK Шаг 5 завершён")
+        
+        logger.info("\n" + "=" * 80)
         logger.info("Обучение завершено успешно!")
         logger.info("=" * 80)
         

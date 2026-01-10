@@ -26,6 +26,7 @@ from transformers import (
 from peft import LoraConfig, get_peft_model, TaskType
 from datasets import Dataset
 import yaml
+from tqdm import tqdm
 
 
 class LoRATrainer:
@@ -71,7 +72,7 @@ class LoRATrainer:
             raise
     
     def load_model_and_processor(self) -> None:
-        """Загрузка модели и процессора."""
+        """Загрузка модели и процессора с индикатором прогресса."""
         try:
             self.logger.info("Загрузка модели и процессора...")
             
@@ -81,27 +82,35 @@ class LoRATrainer:
             # Revision для DeepSeek-OCR (совместимая версия)
             revision = model_config.get('revision', "9f30c71f441d010e5429c532364a86705536c53a")
             
-            # Загрузка процессора
-            self.processor = AutoProcessor.from_pretrained(
-                base_model,
-                revision=revision,
-                trust_remote_code=model_config.get('trust_remote_code', True)
-            )
-            self.logger.info(f"Процессор загружен: {base_model} (revision: {revision})")
-            
-            # Загрузка модели
-            torch_dtype = getattr(torch, model_config.get('torch_dtype', 'float16'))
-            
-            self.model = AutoModel.from_pretrained(
-                base_model,
-                revision=revision,
-                torch_dtype=torch_dtype,
-                attn_implementation=model_config.get('attn_implementation', 'eager'),
-                device_map=model_config.get('device_map', 'auto'),
-                trust_remote_code=model_config.get('trust_remote_code', True),
-                cache_dir=model_config.get('cache_dir')
-            )
-            self.logger.info(f"Модель загружена: {base_model} (revision: {revision})")
+            # Прогресс-бар для загрузки модели
+            with tqdm(total=2, desc="Загрузка модели", unit="step", ncols=100, 
+                      bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]') as pbar:
+                
+                # Загрузка процессора
+                pbar.set_description("Загрузка процессора")
+                self.processor = AutoProcessor.from_pretrained(
+                    base_model,
+                    revision=revision,
+                    trust_remote_code=model_config.get('trust_remote_code', True)
+                )
+                pbar.update(1)
+                self.logger.info(f"Процессор загружен: {base_model} (revision: {revision})")
+                
+                # Загрузка модели (может занять долго, если скачивается)
+                pbar.set_description("Загрузка модели (может занять ~5-30 мин, если скачивается)")
+                
+                torch_dtype = getattr(torch, model_config.get('torch_dtype', 'float16'))
+                self.model = AutoModel.from_pretrained(
+                    base_model,
+                    revision=revision,
+                    torch_dtype=torch_dtype,
+                    attn_implementation=model_config.get('attn_implementation', 'eager'),
+                    device_map=model_config.get('device_map', 'auto'),
+                    trust_remote_code=model_config.get('trust_remote_code', True),
+                    cache_dir=model_config.get('cache_dir')
+                )
+                pbar.update(1)
+                self.logger.info(f"Модель загружена: {base_model} (revision: {revision})")
             
         except Exception as e:
             self.logger.error(f"Ошибка загрузки модели: {e}", exc_info=True)
@@ -178,7 +187,7 @@ class LoRATrainer:
             raise
     
     def prepare_datasets(self) -> None:
-        """Подготовка датасетов для обучения."""
+        """Подготовка датасетов для обучения с индикатором прогресса."""
         try:
             self.logger.info("Подготовка датасетов...")
             
@@ -186,9 +195,19 @@ class LoRATrainer:
             train_path = Path(data_config['train_path'])
             val_path = Path(data_config['val_path'])
             
-            # Загрузка metadata
-            train_metadata = self._load_metadata(train_path / 'metadata.json')
-            val_metadata = self._load_metadata(val_path / 'metadata.json')
+            # Прогресс-бар для загрузки данных
+            with tqdm(total=2, desc="Загрузка данных", unit="split", ncols=100,
+                      bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]') as pbar:
+                
+                # Загрузка train metadata
+                pbar.set_description("Загрузка train данных")
+                train_metadata = self._load_metadata(train_path / 'metadata.json')
+                pbar.update(1)
+                
+                # Загрузка val metadata
+                pbar.set_description("Загрузка val данных")
+                val_metadata = self._load_metadata(val_path / 'metadata.json')
+                pbar.update(1)
             
             self.logger.info(f"Загружено train: {len(train_metadata)}, val: {len(val_metadata)} образцов")
             
@@ -249,7 +268,8 @@ class LoRATrainer:
                 seed=training_config.get('seed', 42),
                 optimizer=optimization_config.get('optimizer', 'adamw_torch'),
                 lr_scheduler_type=optimization_config.get('lr_scheduler_type', 'linear'),
-                max_grad_norm=optimization_config.get('max_grad_norm', 1.0)
+                max_grad_norm=optimization_config.get('max_grad_norm', 1.0),
+                disable_tqdm=False  # Включить progress bars во время обучения
             )
             
             # Data collator
