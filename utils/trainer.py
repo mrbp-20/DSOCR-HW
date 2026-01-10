@@ -225,13 +225,14 @@ class LoRATrainer:
             from utils.model_wrapper import DeepSeekOCRWrapper
             
             # Создание конфигурации LoRA
+            # ВАЖНО: используем SEQ_2_SEQ_LM (не CAUSAL_LM!), т.к. DeepSeek-OCR имеет vision encoder + text decoder
             lora_config = LoraConfig(
                 r=lora_config_dict['r'],
                 lora_alpha=lora_config_dict['lora_alpha'],
                 target_modules=lora_config_dict['target_modules'],
                 lora_dropout=lora_config_dict.get('lora_dropout', 0.05),
                 bias=lora_config_dict.get('bias', 'none'),
-                task_type=TaskType[lora_config_dict.get('task_type', 'SEQ_2_SEQ_LM')]
+                task_type=TaskType.SEQ_2_SEQ_LM  # Vision2Seq модель (vision encoder + text decoder)
             )
             
             # КРИТИЧНО: Оборачиваем модель ПЕРЕД применением LoRA
