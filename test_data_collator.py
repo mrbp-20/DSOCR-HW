@@ -46,14 +46,30 @@ print(f"   Текстов: {len(test_texts)}")
 # 3. Тест раздельной обработки
 print("\n3️⃣ Тест раздельной обработки...")
 
-# 3a. Images через processor
-print("   3a. Обработка images через processor...")
+# 3a. Обработка images через torchvision.transforms
+print("   3a. Обработка images через torchvision.transforms...")
 try:
+    import torchvision.transforms as transforms
+    
     images = [Image.open(img).convert('RGB') for img in test_images]
-    pixel_inputs = processor(images=images, return_tensors="pt")
-    print(f"       ✅ pixel_values shape: {pixel_inputs['pixel_values'].shape}")
+    
+    transform = transforms.Compose([
+        transforms.Resize((1024, 1024)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
+    
+    pixel_values = torch.stack([transform(img) for img in images])
+    print(f"       ✅ pixel_values shape: {pixel_values.shape}")
+    print(f"       ✅ pixel_values dtype: {pixel_values.dtype}")
+    print(f"       ✅ pixel_values range: [{pixel_values.min():.2f}, {pixel_values.max():.2f}]")
 except Exception as e:
     print(f"       ❌ Ошибка: {e}")
+    import traceback
+    traceback.print_exc()
 
 # 3b. Text через processor.batch_encode_plus
 print("   3b. Обработка text через processor.batch_encode_plus...")
@@ -70,7 +86,26 @@ try:
 except Exception as e:
     print(f"       ❌ Ошибка: {e}")
 
-# 4. Проверка кодировки
+# 4. Формирование батча
+print("\n4️⃣ Формирование батча...")
+try:
+    batch = {
+        'pixel_values': pixel_values,
+        'input_ids': text_inputs['input_ids'],
+        'attention_mask': text_inputs['attention_mask'],
+        'labels': text_inputs['input_ids'].clone()
+    }
+    
+    print("   Ключи батча:")
+    for key, value in batch.items():
+        if isinstance(value, torch.Tensor):
+            print(f"     - {key}: shape {value.shape}, dtype {value.dtype}")
+        else:
+            print(f"     - {key}: {type(value)}")
+except Exception as e:
+    print(f"   ❌ Ошибка: {e}")
+
+# 5. Проверка кодировки
 print("\n5️⃣ Проверка кодировки...")
 print("   Русский текст: Привет, мир! 🚀")
 print("   Emoji: 💪 ✅ ❌ 🎯")

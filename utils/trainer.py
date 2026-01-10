@@ -10,6 +10,7 @@ LoRA Trainer for DSOCR-HW project.
 
 import json
 import torch
+import torchvision.transforms as transforms
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 import logging
@@ -187,67 +188,85 @@ class LoRATrainer:
             raise
     
     def _data_collator(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Data collator для DeepSeek-OCR с раздельной обработкой images и text.
+        """
+        Data collator для DeepSeek-OCR с раздельной обработкой images и text.
         
         DeepSeek-OCR требует:
-        1. Processor для изображений (pixel_values)
-        2. Tokenizer для текста (input_ids, attention_mask, labels)
+        1. Ручная предобработка изображений через torchvision.transforms
+           (стандартный ImageNet preprocessing: resize + normalize)
+        2. Tokenizer для текста (через processor.batch_encode_plus)
         
         Args:
             examples: Список словарей с ключами 'image_path' и 'text'
         
         Returns:
             Батч для обучения с ключами:
-            - pixel_values: тензор изображений
+            - pixel_values: тензор изображений [batch_size, 3, H, W]
             - input_ids: токенизированный текст
             - attention_mask: маска внимания
             - labels: метки для loss (копия input_ids)
         """
+        # 1. Загрузка изображений
+        images = [Image.open(ex['image_path']).convert('RGB') for ex in examples]
+        texts = [ex['text'] for ex in examples]
+        
+        # 2. РУЧНАЯ ПРЕДОБРАБОТКА IMAGES через torchvision
+        # DeepSeek-OCR использует стандартный ImageNet preprocessing
         try:
-            # 1. Загрузка изображений
-            images = [Image.open(ex['image_path']).convert('RGB') for ex in examples]
-            texts = [ex['text'] for ex in examples]
+            # Получаем размер изображения из конфига (или используем дефолт 1024)
+            data_config = self.config.get('data', {})
+            preprocessing_config = data_config.get('preprocessing', {})
+            image_size = preprocessing_config.get('image_size', 1024)
             
-            # 2. Обработка изображений через processor (только images!)
-            try:
-                pixel_inputs = self.processor(images=images, return_tensors="pt")
-            except Exception as e:
-                self.logger.error(f"Ошибка обработки изображений: {e}", exc_info=True)
-                raise
-            
-            # 3. Токенизация текста через processor (processor САМ является tokenizer)
-            try:
-                # Получаем max_seq_length из конфига
-                data_config = self.config.get('data', {})
-                max_length = data_config.get('max_seq_length', 512)
-                
-                # Processor для text (processor САМ является tokenizer, используем batch_encode_plus)
-                text_inputs = self.processor.batch_encode_plus(
-                    texts,
-                    return_tensors="pt",
-                    padding=True,
-                    truncation=True,
-                    max_length=max_length
+            transform = transforms.Compose([
+                transforms.Resize((image_size, image_size)),  # Resize до квадрата
+                transforms.ToTensor(),  # Конвертируем в тензор [0, 1]
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],  # ImageNet mean (стандарт для Vision Transformers)
+                    std=[0.229, 0.224, 0.225]    # ImageNet std
                 )
-            except Exception as e:
-                self.logger.error(f"Ошибка токенизации текста: {e}", exc_info=True)
-                raise
+            ])
             
-            # 4. Объединение всех inputs в один батч
-            batch = {
-                **pixel_inputs,  # pixel_values, etc.
-                'input_ids': text_inputs['input_ids'],
-                'attention_mask': text_inputs['attention_mask'],
-            }
+            # Применяем transforms к каждому изображению и собираем в batch
+            pixel_values = torch.stack([transform(img) for img in images])
             
-            # 5. Labels = input_ids для teacher forcing (стандарт для seq2seq)
-            # Копируем, чтобы не изменять оригинальный тензор
-            batch['labels'] = text_inputs['input_ids'].clone()
+            self.logger.debug(f"Обработано {len(images)} изображений, pixel_values shape: {pixel_values.shape}")
             
-            return batch
         except Exception as e:
-            self.logger.error(f"Ошибка в data_collator: {e}", exc_info=True)
+            self.logger.error(f"Ошибка обработки изображений: {e}", exc_info=True)
             raise
+        
+        # 3. Токенизация текста через processor (уже работает!)
+        try:
+            data_config = self.config.get('data', {})
+            max_length = data_config.get('max_seq_length', 512)
+            
+            text_inputs = self.processor.batch_encode_plus(
+                texts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=max_length
+            )
+            
+            self.logger.debug(f"Токенизировано {len(texts)} текстов, input_ids shape: {text_inputs['input_ids'].shape}")
+            
+        except Exception as e:
+            self.logger.error(f"Ошибка токенизации текста: {e}", exc_info=True)
+            raise
+        
+        # 4. Объединяем все inputs в один батч
+        batch = {
+            'pixel_values': pixel_values,  # [batch_size, 3, H, W]
+            'input_ids': text_inputs['input_ids'],  # [batch_size, seq_len]
+            'attention_mask': text_inputs['attention_mask'],  # [batch_size, seq_len]
+        }
+        
+        # 5. Labels = input_ids для teacher forcing (стандарт для seq2seq)
+        # Копируем, чтобы не изменять оригинальный тензор
+        batch['labels'] = text_inputs['input_ids'].clone()
+        
+        return batch
     
     def prepare_datasets(self) -> None:
         """Подготовка датасетов для обучения с индикатором прогресса."""
