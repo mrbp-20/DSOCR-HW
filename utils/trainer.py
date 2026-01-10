@@ -299,7 +299,7 @@ class LoRATrainer:
         
         Returns:
             Батч для обучения с ключами:
-            - images: список списков [[tensor, None, None], ...] (ВАЖНО: DeepSeek-OCR ожидает [base_image, crop1, crop2]!)
+            - images: список TUPLE [(crop_tensor, ori_tensor), ...] (ВАЖНО: DeepSeek-OCR ожидает список tuple, не список списков!)
             - input_ids: токенизированный текст
             - attention_mask: маска внимания
             - labels: метки для loss (копия input_ids)
@@ -326,15 +326,14 @@ class LoRATrainer:
             ])
             
             # Применяем transforms к каждому изображению
-            # КРИТИЧНО: DeepSeek-OCR ожидает список списков: [[base_image, crop1, crop2], ...]
-            # Если crop1/crop2 не используются, передаём пустые тензоры (модель проверяет images[0][1])
+            # КРИТИЧНО: DeepSeek-OCR ожидает список TUPLE: [(crop, ori), (crop, ori), ...]
+            # DataLoader может передать tuple, но НЕ может вложенные списки!
             images_list = []
             for img in images:
                 image_tensor = transform(img)
-                # Создаём список [base_image, crop1, crop2] для каждого изображения
-                # Используем пустые тензоры вместо None, т.к. модель обращается к images[0][1]
-                empty_tensor = torch.zeros_like(image_tensor)
-                image_item = [image_tensor, empty_tensor, empty_tensor]
+                # Создаём TUPLE из (crop, ori) для каждого изображения
+                # Пока crop и ori — один и тот же тензор (без реальных crops)
+                image_item = (image_tensor, image_tensor)  # TUPLE!
                 images_list.append(image_item)
             
             self.logger.debug(f"Обработано {len(images)} изображений, images_list length: {len(images_list)}")
@@ -363,9 +362,10 @@ class LoRATrainer:
             raise
         
         # 4. Объединяем все inputs в один батч
-        # КРИТИЧНО: images должен быть списком списков: [[tensor, None, None], ...]
+        # КРИТИЧНО: images должен быть списком TUPLE: [(crop_tensor, ori_tensor), ...]
+        # DataLoader может передать tuple, но НЕ может вложенные списки!
         batch = {
-            'images': images_list,  # Список списков: [[base_image, crop1, crop2], ...]
+            'images': images_list,  # Список tuple: [(crop, ori), (crop, ori), ...]
             'input_ids': text_inputs['input_ids'],  # [batch_size, seq_len]
             'attention_mask': text_inputs['attention_mask'],  # [batch_size, seq_len]
         }
