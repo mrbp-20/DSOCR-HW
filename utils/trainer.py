@@ -335,7 +335,7 @@ class LoRATrainer:
             # DataLoader может передать tuple, но НЕ может вложенные списки!
             images_list = []
             for img in images:
-                image_tensor = transform(img)
+                image_tensor = transform(img).unsqueeze(0)  # Добавляем batch dimension [1, C, H, W]
                 # Создаём TUPLE из (crop, ori) для каждого изображения
                 # Пока crop и ori — один и тот же тензор (без реальных crops)
                 image_item = (image_tensor, image_tensor)  # TUPLE!
