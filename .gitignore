@@ -62,6 +62,9 @@ models/base/**/*
 # LoRA adapters (коммитим только финальные версии)
 models/lora_adapters/**/checkpoint-*/
 models/lora_adapters/**/runs/
+# Большие файлы моделей (используем Git LFS или храним локально)
+models/lora_adapters/**/*.safetensors
+models/lora_adapters/**/adapter_model.safetensors
 
 # TensorBoard
 runs/
