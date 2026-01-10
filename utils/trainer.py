@@ -96,7 +96,21 @@ class DSModelTrainer(Trainer):
         # ВАЖНО: DeepSeek-OCR использует 'images', не 'pixel_values'!
         model_inputs = {}
         if "images" in inputs:
-            model_inputs["images"] = inputs["images"]
+            images = inputs["images"]
+            # ОТЛАДКА: Проверяем, что доходит до модели (используем print, т.к. logger недоступен)
+            print(f"DEBUG compute_loss: images type: {type(images)}")
+            if images:
+                print(f"DEBUG compute_loss: images[0] type: {type(images[0])}")
+                if isinstance(images[0], tuple):
+                    print(f"DEBUG compute_loss: images[0][0] shape: {images[0][0].shape}")
+                    print(f"DEBUG compute_loss: images[0][1] shape: {images[0][1].shape}")
+                elif images[0] is not None:
+                    print(f"DEBUG compute_loss: images[0] value (first 50 chars): {str(images[0])[:50]}")
+                else:
+                    print(f"DEBUG compute_loss: images[0] is None!")
+            else:
+                print(f"DEBUG compute_loss: images is None or empty!")
+            model_inputs["images"] = images
         if "input_ids" in inputs:
             model_inputs["input_ids"] = inputs["input_ids"]
         if "attention_mask" in inputs:

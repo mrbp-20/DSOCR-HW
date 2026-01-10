@@ -59,11 +59,12 @@ class DeepSeekOCRWrapper(nn.Module):
     
     def forward(
         self,
-        pixel_values: Optional[torch.Tensor] = None,
+        images=None,  # КРИТИЧНО: используем 'images', не 'pixel_values'!
         input_ids: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
         decoder_input_ids: Optional[torch.Tensor] = None,  # ПРИНИМАЕМ, но ИГНОРИРУЕМ
+        pixel_values=None,  # Для обратной совместимости (будет игнорироваться)
         **kwargs  # Ловим все остальные параметры
     ) -> Union[Tuple, torch.Tensor]:
         """
@@ -73,11 +74,12 @@ class DeepSeekOCRWrapper(nn.Module):
         и передаём в модель только то, что она понимает.
         
         Args:
-            pixel_values: Изображения (от vision encoder)
+            images: Список tuple [(crop_tensor, ori_tensor), ...] - формат DeepSeek-OCR!
             input_ids: Текстовые токены (для CausalLM)
             attention_mask: Маска для input_ids
             labels: Целевые токены для loss
             decoder_input_ids: ИГНОРИРУЕТСЯ (для совместимости с PEFT)
+            pixel_values: ИГНОРИРУЕТСЯ (старый параметр, используем images)
             **kwargs: Дополнительные параметры (тоже игнорируются)
         
         Returns:
@@ -85,9 +87,9 @@ class DeepSeekOCRWrapper(nn.Module):
         """
         # Передаём в базовую модель ТОЛЬКО то, что она понимает
         # decoder_input_ids НЕ передаём!
-        # ВАЖНО: DeepSeek-OCR использует 'images', не 'pixel_values'!
+        # КРИТИЧНО: DeepSeek-OCR использует 'images' (список tuple), не 'pixel_values'!
         return self.model(
-            images=pixel_values,
+            images=images,  # Список tuple: [(crop, ori), (crop, ori), ...]
             input_ids=input_ids,
             attention_mask=attention_mask,
             labels=labels
