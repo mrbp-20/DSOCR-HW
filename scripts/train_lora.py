@@ -19,6 +19,7 @@ sys.path.insert(0, str(project_root))
 
 from utils.logger import setup_logger
 from utils.trainer import LoRATrainer
+from utils.encoding_fix import fix_windows_console_encoding
 
 
 def main(args):
@@ -30,6 +31,11 @@ def main(args):
     Returns:
         Exit code (0 = успех, 1 = ошибка)
     """
+    # ========================================
+    # КРИТИЧНО: Установка UTF-8 для Windows
+    # ========================================
+    fix_windows_console_encoding()
+    
     try:
         # Настройка логгера
         log_file = Path("logs") / f"train_lora_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"

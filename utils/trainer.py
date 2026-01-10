@@ -187,29 +187,64 @@ class LoRATrainer:
             raise
     
     def _data_collator(self, examples: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Data collator для обработки батчей данных.
+        """Data collator для DeepSeek-OCR с раздельной обработкой images и text.
+        
+        DeepSeek-OCR требует:
+        1. Processor для изображений (pixel_values)
+        2. Tokenizer для текста (input_ids, attention_mask, labels)
         
         Args:
-            examples: Список примеров из датасета
+            examples: Список словарей с ключами 'image_path' и 'text'
         
         Returns:
-            Словарь с обработанными данными (pixel_values, input_ids, attention_mask, labels)
+            Батч для обучения с ключами:
+            - pixel_values: тензор изображений
+            - input_ids: токенизированный текст
+            - attention_mask: маска внимания
+            - labels: метки для loss (копия input_ids)
         """
         try:
-            # Загрузка изображений
+            # 1. Загрузка изображений
             images = [Image.open(ex['image_path']).convert('RGB') for ex in examples]
             texts = [ex['text'] for ex in examples]
             
-            # Обработка через processor
-            # Processor возвращает pixel_values, input_ids, attention_mask
-            # Для обучения нужны labels (input_ids для targets)
-            inputs = self.processor(images=images, text=texts, return_tensors="pt", padding=True)
+            # 2. Обработка изображений через processor (только images!)
+            try:
+                pixel_inputs = self.processor(images=images, return_tensors="pt")
+            except Exception as e:
+                self.logger.error(f"Ошибка обработки изображений: {e}", exc_info=True)
+                raise
             
-            # Labels = input_ids для sequence-to-sequence
-            if 'input_ids' in inputs:
-                inputs['labels'] = inputs['input_ids'].clone()
+            # 3. Токенизация текста через processor (processor САМ является tokenizer)
+            try:
+                # Получаем max_seq_length из конфига
+                data_config = self.config.get('data', {})
+                max_length = data_config.get('max_seq_length', 512)
+                
+                # Processor для text (processor САМ является tokenizer, используем batch_encode_plus)
+                text_inputs = self.processor.batch_encode_plus(
+                    texts,
+                    return_tensors="pt",
+                    padding=True,
+                    truncation=True,
+                    max_length=max_length
+                )
+            except Exception as e:
+                self.logger.error(f"Ошибка токенизации текста: {e}", exc_info=True)
+                raise
             
-            return inputs
+            # 4. Объединение всех inputs в один батч
+            batch = {
+                **pixel_inputs,  # pixel_values, etc.
+                'input_ids': text_inputs['input_ids'],
+                'attention_mask': text_inputs['attention_mask'],
+            }
+            
+            # 5. Labels = input_ids для teacher forcing (стандарт для seq2seq)
+            # Копируем, чтобы не изменять оригинальный тензор
+            batch['labels'] = text_inputs['input_ids'].clone()
+            
+            return batch
         except Exception as e:
             self.logger.error(f"Ошибка в data_collator: {e}", exc_info=True)
             raise
