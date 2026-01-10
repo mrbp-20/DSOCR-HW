@@ -64,6 +64,8 @@ class DeepSeekOCRWrapper(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
         decoder_input_ids: Optional[torch.Tensor] = None,  # ПРИНИМАЕМ, но ИГНОРИРУЕМ
+        images_spatial_crop=None,  # Опциональный параметр для DeepSeek-OCR
+        images_seq_mask=None,  # Опциональный параметр для DeepSeek-OCR
         pixel_values=None,  # Для обратной совместимости (будет игнорироваться)
         **kwargs  # Ловим все остальные параметры
     ) -> Union[Tuple, torch.Tensor]:
@@ -88,12 +90,18 @@ class DeepSeekOCRWrapper(nn.Module):
         # Передаём в базовую модель ТОЛЬКО то, что она понимает
         # decoder_input_ids НЕ передаём!
         # КРИТИЧНО: DeepSeek-OCR использует 'images' (список tuple), не 'pixel_values'!
-        return self.model(
-            images=images,  # Список tuple: [(crop, ori), (crop, ori), ...]
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            labels=labels
-        )
+        model_kwargs = {
+            'images': images,  # Список tuple: [(crop, ori), (crop, ori), ...]
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
+            'labels': labels
+        }
+        # Добавляем опциональные параметры, если они переданы
+        if images_spatial_crop is not None:
+            model_kwargs['images_spatial_crop'] = images_spatial_crop
+        if images_seq_mask is not None:
+            model_kwargs['images_seq_mask'] = images_seq_mask
+        return self.model(**model_kwargs)
     
     def __getattr__(self, name):
         """

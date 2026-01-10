@@ -97,20 +97,11 @@ class DSModelTrainer(Trainer):
         model_inputs = {}
         if "images" in inputs:
             images = inputs["images"]
-            # ОТЛАДКА: Проверяем, что доходит до модели (используем print, т.к. logger недоступен)
-            print(f"DEBUG compute_loss: images type: {type(images)}")
-            if images:
-                print(f"DEBUG compute_loss: images[0] type: {type(images[0])}")
-                if isinstance(images[0], tuple):
-                    print(f"DEBUG compute_loss: images[0][0] shape: {images[0][0].shape}")
-                    print(f"DEBUG compute_loss: images[0][1] shape: {images[0][1].shape}")
-                elif images[0] is not None:
-                    print(f"DEBUG compute_loss: images[0] value (first 50 chars): {str(images[0])[:50]}")
-                else:
-                    print(f"DEBUG compute_loss: images[0] is None!")
-            else:
-                print(f"DEBUG compute_loss: images is None or empty!")
             model_inputs["images"] = images
+        if "images_spatial_crop" in inputs:
+            model_inputs["images_spatial_crop"] = inputs["images_spatial_crop"]
+        if "images_seq_mask" in inputs:
+            model_inputs["images_seq_mask"] = inputs["images_seq_mask"]
         if "input_ids" in inputs:
             model_inputs["input_ids"] = inputs["input_ids"]
         if "attention_mask" in inputs:
@@ -378,8 +369,11 @@ class LoRATrainer:
         # 4. Объединяем все inputs в один батч
         # КРИТИЧНО: images должен быть списком TUPLE: [(crop_tensor, ori_tensor), ...]
         # DataLoader может передать tuple, но НЕ может вложенные списки!
+        # images_spatial_crop и images_seq_mask - опциональные, но модель требует их присутствия
         batch = {
             'images': images_list,  # Список tuple: [(crop, ori), (crop, ori), ...]
+            'images_spatial_crop': [None] * len(images_list),  # Пустой список для совместимости
+            'images_seq_mask': None,  # Опциональный параметр
             'input_ids': text_inputs['input_ids'],  # [batch_size, seq_len]
             'attention_mask': text_inputs['attention_mask'],  # [batch_size, seq_len]
         }
