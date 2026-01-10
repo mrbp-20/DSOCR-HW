@@ -4,7 +4,7 @@
 model:
   base_model: "deepseek-ai/DeepSeek-OCR"
   cache_dir: "models/base"  # Кэш HuggingFace моделей
-  torch_dtype: "float16"     # fp16 для экономии VRAM
+  torch_dtype: "float32"     # float32 для совместимости с FP32 training
   attn_implementation: "eager"  # ВАЖНО: для sm_120 (RTX 5060 Ti)
   device_map: "auto"         # Автоматическое распределение по GPU
   trust_remote_code: true    # Для DeepSeek-OCR
