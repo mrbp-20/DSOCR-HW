@@ -34,10 +34,37 @@ class DSModelTrainer(Trainer):
     """
     Кастомный Trainer для DeepSeek-OCR (CausalLM).
     
-    Переопределяет compute_loss, чтобы корректно передавать данные в модель.
+    Переопределяет _prepare_inputs и compute_loss, чтобы корректно передавать данные в модель.
     DeepSeek-OCR — это CausalLM (как GPT), а не Encoder-Decoder (как T5),
     поэтому не поддерживает decoder_input_ids.
     """
+    
+    def _prepare_inputs(self, inputs):
+        """
+        Удаляет decoder_input_ids, который Trainer автоматически добавляет.
+        
+        Проблема:
+            HuggingFace Trainer автоматически добавляет decoder_input_ids для Vision2Seq моделей
+            в методе _prepare_inputs(). Это стандартное поведение для EncoderDecoder моделей (T5, BART),
+            но DeepSeek-OCR — это CausalLM, который не понимает decoder_input_ids.
+        
+        Решение:
+            Переопределяем _prepare_inputs, чтобы удалить decoder_input_ids из inputs
+            ДО того, как они попадут в compute_loss().
+        
+        Args:
+            inputs: Словарь с входными данными (может содержать decoder_input_ids)
+        
+        Returns:
+            inputs без decoder_input_ids
+        """
+        inputs = super()._prepare_inputs(inputs)
+        
+        # КРИТИЧНО: DeepSeek-OCR — это CausalLM, не EncoderDecoder
+        if "decoder_input_ids" in inputs:
+            inputs.pop("decoder_input_ids")  # Удаляем!
+        
+        return inputs
     
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -66,24 +93,29 @@ class DSModelTrainer(Trainer):
         Returns:
             loss (и outputs, если return_outputs=True)
         """
-        # 1. Извлекаем данные из batch
-        pixel_values = inputs.get("pixel_values")
-        input_ids = inputs.get("input_ids")
-        attention_mask = inputs.get("attention_mask")
-        labels = inputs.get("labels")
+        # 1. Удаляем decoder_input_ids на всякий случай (если он всё же попал сюда)
+        if "decoder_input_ids" in inputs:
+            inputs.pop("decoder_input_ids")
         
-        # 2. Вызываем forward pass модели с правильными параметрами
+        # 2. Создаём новый словарь ТОЛЬКО с нужными параметрами
+        # Это гарантирует, что decoder_input_ids не попадёт в модель
+        model_inputs = {}
+        if "pixel_values" in inputs:
+            model_inputs["pixel_values"] = inputs["pixel_values"]
+        if "input_ids" in inputs:
+            model_inputs["input_ids"] = inputs["input_ids"]
+        if "attention_mask" in inputs:
+            model_inputs["attention_mask"] = inputs["attention_mask"]
+        if "labels" in inputs:
+            model_inputs["labels"] = inputs["labels"]
+        
+        # 3. Вызываем forward pass модели с правильными параметрами
         # DeepSeek-OCR принимает:
         # - pixel_values: изображения для vision encoder
         # - input_ids: текстовые токены (как в GPT)
         # - attention_mask: маска для input_ids
         # - labels: целевые токены для loss
-        outputs = model(
-            pixel_values=pixel_values,
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            labels=labels
-        )
+        outputs = model(**model_inputs)
         
         # 3. Извлекаем loss из outputs
         # Модель автоматически считает CrossEntropyLoss между predictions и labels

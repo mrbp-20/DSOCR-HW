@@ -1,0 +1,105 @@
+2026-01-10 17:19:13 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:13 - train_lora - INFO - Запуск обучения LoRA
+2026-01-10 17:19:13 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:13 - train_lora - INFO - Конфигурация загружена из configs\training_config.yaml
+2026-01-10 17:19:13 - train_lora - INFO - 
+================================================================================
+2026-01-10 17:19:13 - train_lora - INFO - Шаг 1/5: Загрузка модели и процессора...
+2026-01-10 17:19:13 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:13 - train_lora - INFO - Загрузка модели и процессора...
+2026-01-10 17:19:14 - train_lora - INFO - Процессор загружен: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 17:19:24 - train_lora - INFO - Модель загружена: deepseek-ai/DeepSeek-OCR (revision: 9f30c71f441d010e5429c532364a86705536c53a)
+2026-01-10 17:19:24 - train_lora - INFO - OK Шаг 1 завершён
+2026-01-10 17:19:24 - train_lora - INFO - 
+================================================================================
+2026-01-10 17:19:24 - train_lora - INFO - Шаг 2/5: Настройка LoRA...
+2026-01-10 17:19:24 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:24 - train_lora - INFO - Настройка LoRA...
+2026-01-10 17:19:29 - train_lora - INFO - LoRA настроен успешно
+2026-01-10 17:19:29 - train_lora - INFO - OK Шаг 2 завершён
+2026-01-10 17:19:29 - train_lora - INFO - 
+================================================================================
+2026-01-10 17:19:29 - train_lora - INFO - Шаг 3/5: Подготовка датасетов...
+2026-01-10 17:19:29 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:29 - train_lora - INFO - Подготовка датасетов...
+2026-01-10 17:19:29 - train_lora - INFO - Загружено train: 3, val: 1 образцов
+2026-01-10 17:19:29 - train_lora - INFO - Датасеты подготовлены
+2026-01-10 17:19:29 - train_lora - INFO - OK Шаг 3 завершён
+2026-01-10 17:19:29 - train_lora - INFO - 
+================================================================================
+2026-01-10 17:19:29 - train_lora - INFO - Шаг 4/5: Создание Trainer...
+2026-01-10 17:19:29 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:29 - train_lora - INFO - Создание Trainer...
+2026-01-10 17:19:30 - train_lora - INFO - Trainer создан
+2026-01-10 17:19:30 - train_lora - INFO - OK Шаг 4 завершён
+2026-01-10 17:19:30 - train_lora - INFO - 
+================================================================================
+2026-01-10 17:19:30 - train_lora - INFO - Шаг 5/5: ЗАПУСК ОБУЧЕНИЯ!
+2026-01-10 17:19:30 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:30 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:30 - train_lora - INFO - Начало обучения
+2026-01-10 17:19:30 - train_lora - INFO - ================================================================================
+2026-01-10 17:19:32 - train_lora - ERROR - Ошибка обучения: DeepseekOCRForCausalLM.forward() got an unexpected keyword argument 'decoder_input_ids'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\utils\trainer.py", line 481, in train
+    self.trainer.train()
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2052, in train
+    return inner_training_loop(
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2388, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 3485, in training_step
+    loss = self.compute_loss(model, inputs)
+  File "C:\DSOCR-HW\utils\trainer.py", line 108, in compute_loss
+    outputs = model(
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\accelerate\utils\operations.py", line 819, in forward
+    return model_forward(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\accelerate\utils\operations.py", line 807, in __call__
+    return convert_to_fp32(self.model_forward(*args, **kwargs))
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\amp\autocast_mode.py", line 44, in decorate_autocast
+    return func(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\peft\peft_model.py", line 1326, in forward
+    return self.base_model(
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\peft\tuners\tuners_utils.py", line 161, in forward
+    return self.model.forward(*args, **kwargs)
+TypeError: DeepseekOCRForCausalLM.forward() got an unexpected keyword argument 'decoder_input_ids'
+2026-01-10 17:19:32 - train_lora - ERROR - Ошибка: DeepseekOCRForCausalLM.forward() got an unexpected keyword argument 'decoder_input_ids'
+Traceback (most recent call last):
+  File "C:\DSOCR-HW\scripts\train_lora.py", line 83, in main
+    trainer.train()
+  File "C:\DSOCR-HW\utils\trainer.py", line 481, in train
+    self.trainer.train()
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2052, in train
+    return inner_training_loop(
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 2388, in _inner_training_loop
+    tr_loss_step = self.training_step(model, inputs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\transformers\trainer.py", line 3485, in training_step
+    loss = self.compute_loss(model, inputs)
+  File "C:\DSOCR-HW\utils\trainer.py", line 108, in compute_loss
+    outputs = model(
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\accelerate\utils\operations.py", line 819, in forward
+    return model_forward(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\accelerate\utils\operations.py", line 807, in __call__
+    return convert_to_fp32(self.model_forward(*args, **kwargs))
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\amp\autocast_mode.py", line 44, in decorate_autocast
+    return func(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\peft\peft_model.py", line 1326, in forward
+    return self.base_model(
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\torch\nn\modules\module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "C:\DSOCR-HW\venv\lib\site-packages\peft\tuners\tuners_utils.py", line 161, in forward
+    return self.model.forward(*args, **kwargs)
+TypeError: DeepseekOCRForCausalLM.forward() got an unexpected keyword argument 'decoder_input_ids'
